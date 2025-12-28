@@ -21,7 +21,9 @@ export class ProductsService {
 
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
-    const totalProducts = await this.prismaService.product.count();
+    const totalProducts = await this.prismaService.product.count({
+      where: { available: true },
+    });
     const totalPages = Math.ceil(totalProducts / limit);
 
     if (page > totalPages && totalProducts > 0) {
@@ -34,6 +36,7 @@ export class ProductsService {
       data: await this.prismaService.product.findMany({
         take: limit,
         skip: (page - 1) * limit,
+        where: { available: true },
       }),
       meta: {
         page,
@@ -46,7 +49,7 @@ export class ProductsService {
 
   async findOne(id: number) {
     const product = await this.prismaService.product.findUnique({
-      where: { id },
+      where: { id, available: true },
     });
 
     if (!product) {
@@ -68,8 +71,9 @@ export class ProductsService {
   async remove(id: number) {
     await this.findOne(id);
 
-    return await this.prismaService.product.delete({
+    return await this.prismaService.product.update({
       where: { id },
+      data: { available: false },
     });
   }
 }
