@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PaginationDto } from 'src/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -14,8 +15,29 @@ export class ProductsService {
     return product;
   }
 
-  findAll() {
-    return this.prismaService.product.findMany({});
+  async findAll(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+    const totalProducts = await this.prismaService.product.count();
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    if (page > totalPages && totalProducts > 0) {
+      throw new BadRequestException(
+        `Page ${page} does not exist. There are only ${totalPages} pages available.`,
+      );
+    }
+
+    return {
+      data: await this.prismaService.product.findMany({
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      meta: {
+        page,
+        limit,
+        totalPages,
+        totalProducts,
+      },
+    };
   }
 
   findOne(id: number) {
