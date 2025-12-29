@@ -1,8 +1,5 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -27,9 +24,10 @@ export class ProductsService {
     const totalPages = Math.ceil(totalProducts / limit);
 
     if (page > totalPages && totalProducts > 0) {
-      throw new BadRequestException(
-        `Page ${page} does not exist. There are only ${totalPages} pages available.`,
-      );
+      throw new RpcException({
+        message: `Page ${page} exceeds total pages ${totalPages}.`,
+        status: HttpStatus.BAD_REQUEST,
+      });
     }
 
     return {
@@ -53,7 +51,10 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found.`);
+      throw new RpcException({
+        message: `Product with ID ${id} not found.`,
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     return product;
