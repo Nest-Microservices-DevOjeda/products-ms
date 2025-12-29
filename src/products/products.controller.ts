@@ -9,27 +9,27 @@ import { ProductsService } from './products.service';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  @MessagePattern({ cmd: 'createProduct' })
+  @MessagePattern({ cmd: 'create_product' })
   create(@Payload() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
   }
 
-  @MessagePattern({ cmd: 'getProducts' })
+  @MessagePattern({ cmd: 'get_products' })
   findAll(@Payload() paginationDto: PaginationDto) {
     return this.productsService.findAll(paginationDto);
   }
 
-  @MessagePattern({ cmd: 'getProduct' })
+  @MessagePattern({ cmd: 'get_product' })
   findOne(@Payload('id', ParseIntPipe) id: number) {
     return this.productsService.findOne(id);
   }
 
-  @MessagePattern({ cmd: 'updateProduct' })
+  @MessagePattern({ cmd: 'update_product' })
   update(@Payload() updateProductDto: UpdateProductDto) {
     return this.productsService.update(updateProductDto);
   }
 
-  @MessagePattern({ cmd: 'deleteProduct' })
+  @MessagePattern({ cmd: 'delete_product' })
   remove(@Payload('id', ParseIntPipe) id: number) {
     return this.productsService.remove(id);
   }
