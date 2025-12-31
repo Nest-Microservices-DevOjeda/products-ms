@@ -79,4 +79,31 @@ export class ProductsService {
       data: { available: false },
     });
   }
+
+  async validateProducts(productIds: number[]) {
+    productIds = [...new Set(productIds)];
+
+    const products = await this.prismaService.product.findMany({
+      where: {
+        id: { in: productIds },
+        available: true,
+      },
+    });
+
+    if (products.length !== productIds.length) {
+      const foundProductIds = new Set(products.map((product) => product.id));
+      const missingProductIds = productIds.filter(
+        (id) => !foundProductIds.has(id),
+      );
+
+      throw new RpcException({
+        message: `Products with IDs [${missingProductIds.join(
+          ', ',
+        )}] not found or unavailable.`,
+        status: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    return products;
+  }
 }
