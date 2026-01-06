@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { PaginationDto } from 'src/common';
+import { PaginationDto, ProductForOrderDto } from 'src/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -80,7 +80,7 @@ export class ProductsService {
     });
   }
 
-  async validateProducts(productIds: number[]) {
+  async validateProducts(productIds: number[]): Promise<ProductForOrderDto[]> {
     productIds = [...new Set(productIds)];
 
     const products = await this.prismaService.product.findMany({
@@ -104,6 +104,10 @@ export class ProductsService {
       });
     }
 
-    return products;
+    return products.map((product: ProductForOrderDto) => ({
+      id: product.id,
+      price: product.price,
+      name: product.name,
+    }));
   }
 }
