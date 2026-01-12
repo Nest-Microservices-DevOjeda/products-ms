@@ -1,5 +1,8 @@
+packages:
+  - apps/*
+  - packages/*
+
 onlyBuiltDependencies:
-  - '@nestjs/core'
   - '@prisma/engines'
   - better-sqlite3
   - prisma
