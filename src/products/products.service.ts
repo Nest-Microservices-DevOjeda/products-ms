@@ -4,16 +4,33 @@ import { PaginationDto, ProductForOrderDto } from 'src/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { Prisma } from 'generated/prisma/client';
 
 @Injectable()
 export class ProductsService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  create(createProductDto: CreateProductDto) {
-    const product = this.prismaService.product.create({
-      data: createProductDto,
-    });
-    return product;
+  async create(createProductDto: CreateProductDto) {
+    try {
+      const product = await this.prismaService.product.create({
+        data: createProductDto,
+      });
+      return product;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new RpcException({
+            message: 'Product already exists.',
+            status: HttpStatus.CONFLICT,
+          });
+        }
+      }
+
+      throw new RpcException({
+        message: 'Failed to create product.',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 
   async findAll(paginationDto: PaginationDto) {
