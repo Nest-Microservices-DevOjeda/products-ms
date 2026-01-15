@@ -72,7 +72,7 @@ RUN pnpm rebuild better-sqlite3
 EXPOSE 3001
 
 # Start development server
-CMD ["pnpm", "start:dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && pnpm start:dev"]
 
 # ========================================
 # Production Stage
