@@ -3,9 +3,10 @@
 # Node.js NestJS Application (Using pnpm)
 # ========================================
 
+# ---------- Base ----------
 FROM node:20-alpine AS base
 
-# Install necessary system dependencies
+# System dependencies
 RUN apk add --no-cache \
     libc6-compat \
     python3 \
@@ -15,81 +16,59 @@ RUN apk add --no-cache \
 # Enable pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Set working directory
 WORKDIR /usr/src/app
 
-# ========================================
-# Dependencies Stage
-# ========================================
+# ---------- Dependencies (prod only) ----------
 FROM base AS deps
 
-# Copy package files
 COPY package.json pnpm-lock.yaml ./
-
-# Install production dependencies
 RUN pnpm install --prod --frozen-lockfile
 
-# ========================================
-# Build Dependencies Stage
-# ========================================
+# ---------- Build dependencies (dev + prod) ----------
 FROM base AS build-deps
 
-# Copy package files
 COPY package.json pnpm-lock.yaml ./
-
-# Install all dependencies (including dev)
 RUN pnpm install --frozen-lockfile
 
-# ========================================
-# Build Stage
-# ========================================
+# ---------- Build ----------
 FROM build-deps AS build
 
-# Copy source files
-COPY . .
-
-# Generate Prisma client (if applicable, usually needed before build)
+COPY prisma ./prisma
 RUN npx prisma generate
 
-# Build the application
+COPY . .
 RUN pnpm run build
 
-# ========================================
-# Development Stage
-# ========================================
+# ---------- Development ----------
 FROM build-deps AS development
 
 ENV NODE_ENV=development
 
-# Copy source files
+WORKDIR /usr/src/app
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-RUN pnpm rebuild better-sqlite3
-
-# Expose port
+# Expose app port (dev)
 EXPOSE 3001
 
-# Start development server
-CMD ["sh", "-c", "npx prisma migrate deploy && pnpm start:dev"]
+# Hot reload + Prisma + native deps
+CMD ["sh", "-c", "pnpm rebuild better-sqlite3 && npx prisma migrate dev && pnpm start:dev"]
 
-# ========================================
-# Production Stage
-# ========================================
+# ---------- Production ----------
 FROM base AS production
 
 ENV NODE_ENV=production
 
-# Copy production dependencies from deps stage
+WORKDIR /usr/src/app
+
+# Production deps
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 
-# Copy built application from build stage
+# Built app
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/package.json ./
+COPY --from=build /usr/src/app/prisma ./prisma
 
-# Expose port
+# Expose app port (prod)
 EXPOSE 3001
 
-# Start production server
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
