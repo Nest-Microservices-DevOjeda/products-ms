@@ -51,7 +51,7 @@ COPY . .
 EXPOSE 3001
 
 # Hot reload + Prisma + native deps
-CMD ["sh", "-c", "pnpm rebuild better-sqlite3 && npx prisma migrate dev && pnpm start:dev"]
+CMD ["sh", "-c", "pnpm rebuild better-sqlite3 && pnpm prisma generate && pnpm prisma migrate dev && pnpm start:dev"]
 
 # ---------- Production ----------
 FROM base AS production
